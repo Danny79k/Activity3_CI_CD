@@ -24,7 +24,7 @@ jobs:
         ports:
           - 3306:3306
         options: >-
-          --health-cmd="mysqladmin ping -h localhost -u fazt -pfaztpassword"
+          --health-cmd="mysqladmin ping -h localhost -u${{ secrets.DB_USER }} -p${{ secrets.DB_USER_PASSWORD }}"
           --health-interval=10s
           --health-timeout=5s
           --health-retries=5
@@ -45,16 +45,18 @@ jobs:
       - name: Run linter
         run: npm run lint
 
+      - name: Install MySQL client
+        run: sudo apt-get update && sudo apt-get install -y mysql-client
+
       - name: Wait for MySQL to be ready
         run: |
-          echo "Waiting for MySQL..."
-          until mysql -h 127.0.0.1 -u fazt -pfaztpassword -e "SELECT 1"; do
+          until mysql -h 127.0.0.1 -u${{ secrets.DB_USER }} -p${{ secrets.DB_USER_PASSWORD }} -e "SELECT 1"; do
             sleep 3
           done
 
       - name: Initialize database
         run: |
-          mysql -h 127.0.0.1 -u fazt -pfaztpassword companydb < db/database.sql
+          mysql -h 127.0.0.1 -u${{ secrets.DB_USER }} -p${{ secrets.DB_USER_PASSWORD }} ${{ secrets.DB_USER_DATABASE }} < db/database.sql
 
       - name: Run tests with coverage
         run: npm run test:coverage
